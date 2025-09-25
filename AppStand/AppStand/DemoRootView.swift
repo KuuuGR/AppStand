@@ -1,11 +1,17 @@
 import SwiftUI
 
-private struct HeroItem: Identifiable {
+private struct HeroItem: Identifiable, Equatable {
     let id = UUID()
     let title: String
     let systemIcon: String
     let tagline: String
     let detail: String
+}
+
+private struct WrappedHeroItem: Identifiable {
+    let id = UUID()
+    let originalIndex: Int
+    let content: HeroItem
 }
 
 private enum DemoTab: String, CaseIterable, Identifiable {
@@ -43,6 +49,7 @@ struct DemoRootView: View {
 
     @State private var selectedTab: DemoTab = .home
     @State private var selectedHeroIndex: Int = 0
+    @State private var heroPageIndex: Int = 1
     @State private var showSplash = true
     @State private var splashTaskScheduled = false
 
@@ -68,6 +75,25 @@ struct DemoRootView: View {
             tagline: "Plan the week ahead",
             detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew.")
     ]
+
+    private var wrappedHeroItems: [WrappedHeroItem] {
+        guard !heroItems.isEmpty else { return [] }
+
+        let extended = [heroItems.last!] + heroItems + [heroItems.first!]
+
+        return extended.enumerated().map { index, hero in
+            let originalIndex: Int
+            if index == 0 {
+                originalIndex = heroItems.count - 1
+            } else if index == extended.count - 1 {
+                originalIndex = 0
+            } else {
+                originalIndex = index - 1
+            }
+
+            return WrappedHeroItem(originalIndex: originalIndex, content: hero)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -139,6 +165,7 @@ struct DemoRootView: View {
             }
         }
         .onAppear(perform: scheduleSplashDismissal)
+        .onChange(of: heroPageIndex, perform: normalizeHeroPageIndex)
     }
 
     private var background: some View {
@@ -216,59 +243,82 @@ struct DemoRootView: View {
     }
 
     private var heroRail: some View {
-        TabView(selection: $selectedHeroIndex) {
-            ForEach(Array(heroItems.enumerated()), id: \.offset) { index, item in
-                VStack(spacing: 10) {
-                    Capsule()
-                        .fill(Color.white.opacity(0.18))
-                        .frame(width: 32, height: 4)
+        TabView(selection: $heroPageIndex) {
+            ForEach(Array(wrappedHeroItems.enumerated()), id: \.offset) { index, item in
+                HStack(spacing: 12) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
 
-                    HStack(spacing: 14) {
-                        Image(systemName: item.systemIcon)
-                            .font(.system(size: 22, weight: .semibold))
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(Color.white, Color.white.opacity(0.65))
-                            .frame(width: 48, height: 48)
-                            .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    Image(systemName: item.content.systemIcon)
+                        .font(.system(size: 22, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(Color.white, Color.white.opacity(0.65))
+                        .frame(width: 46, height: 46)
+                        .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.title)
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                            Text("Swipe to explore")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.65))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.75))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.content.title)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Text("Swipe to explore")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.65))
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.14))
-                    )
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.14))
+                )
                 .padding(.horizontal, 4)
                 .tag(index)
             }
         }
-        .frame(height: 120)
-        .tabViewStyle(.page(indexDisplayMode: .always))
+        .frame(height: 92)
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .onAppear {
+            guard !heroItems.isEmpty else { return }
+            heroPageIndex = 1
+            selectedHeroIndex = 0
+        }
+    }
+
+    private func normalizeHeroPageIndex(_ index: Int) {
+        guard !wrappedHeroItems.isEmpty else { return }
+
+        let lastWrappedIndex = wrappedHeroItems.count - 1
+
+        if index == 0 {
+            DispatchQueue.main.async {
+                heroPageIndex = lastWrappedIndex - 1
+                selectedHeroIndex = wrappedHeroItems[heroPageIndex].originalIndex
+            }
+        } else if index == lastWrappedIndex {
+            DispatchQueue.main.async {
+                heroPageIndex = 1
+                selectedHeroIndex = wrappedHeroItems[heroPageIndex].originalIndex
+            }
+        } else {
+            selectedHeroIndex = wrappedHeroItems[index].originalIndex
+        }
     }
 
     private var bottomBar: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Divider()
                 .background(Color.white.opacity(0.25))
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 ForEach(DemoTab.allCases) { tab in
                     Button {
                         withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
@@ -297,7 +347,7 @@ struct DemoRootView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 4)
             .padding(.bottom, 10)
         }
         .background(.ultraThinMaterial)
