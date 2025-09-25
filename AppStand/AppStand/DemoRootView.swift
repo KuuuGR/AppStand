@@ -6,13 +6,6 @@ private struct HeroItem: Identifiable {
     let systemIcon: String
 }
 
-private struct MetricCard: Identifiable {
-    let id = UUID()
-    let title: String
-    let value: String
-    let systemIcon: String
-}
-
 private enum DemoTab: String, CaseIterable, Identifiable {
     case home
     case units
@@ -52,19 +45,10 @@ struct DemoRootView: View {
     @State private var splashTaskScheduled = false
 
     private let heroItems: [HeroItem] = [
-        .init(title: "Arena", systemIcon: "trophy"),
-        .init(title: "World", systemIcon: "map"),
-        .init(title: "Expedition", systemIcon: "paperplane"),
-        .init(title: "Calendar", systemIcon: "calendar"),
-        .init(title: "Weather", systemIcon: "cloud.sun"),
-        .init(title: "Luck", systemIcon: "sparkles"),
-        .init(title: "Balcony", systemIcon: "building.columns")
-    ]
-
-    private let metrics: [MetricCard] = [
-        .init(title: "Gold", value: "7.5M", systemIcon: "creditcard"),
-        .init(title: "Gems", value: "31.6K", systemIcon: "diamond"),
-        .init(title: "Rank", value: "63", systemIcon: "rosette")
+        .init(title: "Arena", systemIcon: "trophy.fill"),
+        .init(title: "World", systemIcon: "map.fill"),
+        .init(title: "Expedition", systemIcon: "paperplane.fill"),
+        .init(title: "Calendar", systemIcon: "calendar")
     ]
 
     var body: some View {
@@ -116,12 +100,16 @@ struct DemoRootView: View {
                 }
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    topStats
-                }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    bottomBar
-                        .padding(.horizontal, 20)
+                    VStack(spacing: 12) {
+                        if selectedTab == .home {
+                            heroRail
+                        }
+
+                        bottomBar
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
                 }
             }
 
@@ -146,76 +134,11 @@ struct DemoRootView: View {
         .ignoresSafeArea()
     }
 
-    private var playerStats: some View {
-        LazyHGrid(rows: [GridItem(.flexible(minimum: 60))], spacing: 12) {
-            ForEach(metrics) { metric in
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(metric.title, systemImage: metric.systemIcon)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.75))
-                        .labelStyle(.titleAndIcon)
-                    Text(metric.value)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity, minHeight: 66)
-                .padding(.vertical, 14)
-                .padding(.horizontal, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .strokeBorder(Color.white.opacity(0.14))
-                )
-            }
-        }
-    }
-
-    private var topStats: some View {
-        VStack(spacing: 12) {
-            handleBar
-            playerStats
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
-        .background(.ultraThinMaterial)
-        .overlay(
-            Rectangle()
-                .frame(height: 0.5)
-                .foregroundStyle(Color.white.opacity(0.2))
-                .frame(maxHeight: .infinity, alignment: .bottom)
-        )
-    }
-
-    private var handleBar: some View {
-        Capsule()
-            .fill(Color.white.opacity(0.4))
-            .frame(width: 38, height: 4)
-            .padding(.top, 4)
-    }
-
     @ViewBuilder
     private var content: some View {
         switch selectedTab {
         case .home:
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Featured Destinations")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.top, 20)
-
-                Text("Stay on top of the world with curated objectives and limited-time adventures.")
-                    .font(.callout)
-                    .foregroundStyle(.white.opacity(0.75))
-
-                heroRail
-
-                Spacer()
-            }
-            .padding(.horizontal, 20)
+            Color.clear
         default:
             VStack(spacing: 16) {
                 Image(systemName: selectedTab.systemIcon)
@@ -242,53 +165,57 @@ struct DemoRootView: View {
         }
     }
 
+    private var stageBackground: some View {
+        LinearGradient(colors: [Color.black.opacity(0.3), Color.black.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     private var heroRail: some View {
         TabView(selection: $selectedHeroIndex) {
             ForEach(Array(heroItems.enumerated()), id: \.offset) { index, item in
-                VStack(spacing: 16) {
-                    LinearGradient(colors: [Color.white.opacity(0.22), Color.white.opacity(0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        .mask(
-                            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                                .frame(height: 220)
-                        )
-                        .overlay(
-                            VStack(spacing: 16) {
-                                Image(systemName: item.systemIcon)
-                                    .symbolRenderingMode(.palette)
-                                    .foregroundStyle(Color.white, Color.white.opacity(0.6))
-                                    .font(.system(size: 54, weight: .semibold))
-                                    .padding()
-                                    .background(Color.white.opacity(0.12), in: Circle())
+                VStack(spacing: 10) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 32, height: 4)
 
-                                Text(item.title.uppercased())
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                            }
-                            .padding(.vertical, 32)
-                        )
-                        .padding(.horizontal, 12)
-                }
-                .padding(.vertical, 28)
-                .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        colors: [Color(red: 148/255, green: 87/255, blue: 235/255).opacity(0.7),
-                                 Color(red: 75/255, green: 123/255, blue: 236/255).opacity(0.7)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                    HStack(spacing: 14) {
+                        Image(systemName: item.systemIcon)
+                            .font(.system(size: 22, weight: .semibold))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(Color.white, Color.white.opacity(0.65))
+                            .frame(width: 48, height: 48)
+                            .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.title)
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            Text("Swipe to explore")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.65))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.75))
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.14))
                     )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                .padding(.horizontal, 12)
+                }
+                .padding(.horizontal, 4)
                 .tag(index)
             }
         }
+        .frame(height: 120)
         .tabViewStyle(.page(indexDisplayMode: .always))
-        .frame(height: 320)
-    }
-
-    private var stageBackground: some View {
-        LinearGradient(colors: [Color.black.opacity(0.3), Color.black.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     private var bottomBar: some View {
