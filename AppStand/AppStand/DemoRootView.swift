@@ -4,6 +4,8 @@ private struct HeroItem: Identifiable {
     let id = UUID()
     let title: String
     let systemIcon: String
+    let tagline: String
+    let detail: String
 }
 
 private enum DemoTab: String, CaseIterable, Identifiable {
@@ -45,10 +47,26 @@ struct DemoRootView: View {
     @State private var splashTaskScheduled = false
 
     private let heroItems: [HeroItem] = [
-        .init(title: "Arena", systemIcon: "trophy.fill"),
-        .init(title: "World", systemIcon: "map.fill"),
-        .init(title: "Expedition", systemIcon: "paperplane.fill"),
-        .init(title: "Calendar", systemIcon: "calendar")
+        .init(
+            title: "Arena",
+            systemIcon: "trophy.fill",
+            tagline: "Climb the ranked ladder",
+            detail: "Challenge rival squads, earn trophies, and unlock weekly rewards tailored to your team."),
+        .init(
+            title: "World",
+            systemIcon: "map.fill",
+            tagline: "Chart new territories",
+            detail: "Scout fresh zones, reveal secrets, and secure fast-travel routes for the guild."),
+        .init(
+            title: "Expedition",
+            systemIcon: "paperplane.fill",
+            tagline: "Deploy your specialists",
+            detail: "Send operatives on timed missions to gather intel, materials, and rare crafting cores."),
+        .init(
+            title: "Calendar",
+            systemIcon: "calendar",
+            tagline: "Plan the week ahead",
+            detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew.")
     ]
 
     var body: some View {
@@ -110,6 +128,7 @@ struct DemoRootView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, selectedTab == .home ? 1 : 12)
+                    .padding(.bottom, 16)
                 }
             }
 
@@ -138,31 +157,58 @@ struct DemoRootView: View {
     private var content: some View {
         switch selectedTab {
         case .home:
-            Color.clear
+            homeContent
         default:
-            VStack(spacing: 16) {
-                Image(systemName: selectedTab.systemIcon)
-                    .symbolRenderingMode(.hierarchical)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 70, height: 70)
-                    .foregroundStyle(.white)
-                    .padding()
-                    .background(Color.white.opacity(0.08), in: Circle())
-
-                Text("No content yet for \(selectedTab.title)")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-
-                Text("Use this space to mock the experience with SwiftUI components while iterating on BarsKit replacement views.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                Spacer()
-            }
-            .padding(.top, 32)
+            placeholderContent
         }
+    }
+
+    private var homeContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(heroItems[selectedHeroIndex].title)
+                .font(.largeTitle.bold())
+                .foregroundStyle(.white)
+
+            Text(heroItems[selectedHeroIndex].tagline)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.85))
+
+            Text(heroItems[selectedHeroIndex].detail)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+        .transition(.opacity.combined(with: .move(edge: .trailing)))
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: selectedHeroIndex)
+    }
+
+    private var placeholderContent: some View {
+        VStack(spacing: 16) {
+            Image(systemName: selectedTab.systemIcon)
+                .symbolRenderingMode(.hierarchical)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 70, height: 70)
+                .foregroundStyle(.white)
+                .padding()
+                .background(Color.white.opacity(0.08), in: Circle())
+
+            Text("No content yet for \(selectedTab.title)")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white)
+
+            Text("Use this space to mock the experience with SwiftUI components while iterating on BarsKit replacement views.")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            Spacer()
+        }
+        .padding(.top, 32)
     }
 
     private var stageBackground: some View {
