@@ -165,7 +165,9 @@ struct DemoRootView: View {
             }
         }
         .onAppear(perform: scheduleSplashDismissal)
-        .onChange(of: heroPageIndex, perform: normalizeHeroPageIndex)
+        .onChange(of: heroPageIndex) { _, newValue in
+            normalizeHeroPageIndex(newValue)
+        }
     }
 
     private var background: some View {
