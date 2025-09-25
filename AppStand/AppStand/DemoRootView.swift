@@ -73,6 +73,11 @@ struct DemoRootView: View {
             title: "Calendar",
             systemIcon: "calendar",
             tagline: "Plan the week ahead",
+            detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew."),
+        .init(
+            title: "Cactular",
+            systemIcon: "home",
+            tagline: "Plan the week ahead",
             detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew.")
     ]
 
