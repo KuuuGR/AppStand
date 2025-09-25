@@ -73,11 +73,6 @@ struct DemoRootView: View {
             title: "Calendar",
             systemIcon: "calendar",
             tagline: "Plan the week ahead",
-            detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew."),
-        .init(
-            title: "Captular",
-            systemIcon: "calendar",
-            tagline: "Plan the week ahead",
             detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew.")
     ]
 
@@ -252,52 +247,52 @@ struct DemoRootView: View {
     private var heroRail: some View {
         TabView(selection: $heroPageIndex) {
             ForEach(Array(wrappedHeroItems.enumerated()), id: \.offset) { index, item in
-                VStack(spacing: 10) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.75))
+                HStack(spacing: 12) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
 
-                        Image(systemName: item.content.systemIcon)
-                            .font(.system(size: 22, weight: .semibold))
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(Color.white, Color.white.opacity(0.65))
-                            .frame(width: 46, height: 46)
-                            .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    Image(systemName: item.content.systemIcon)
+                        .font(.system(size: 22, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(Color.white, Color.white.opacity(0.65))
+                        .frame(width: 46, height: 46)
+                        .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.content.title)
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                            Text("Swipe to explore")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.65))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.75))
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.content.title)
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Text("Swipe to explore")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.65))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.14))
-                    )
 
-                    heroPageIndicator
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.14))
+                )
                 .padding(.horizontal, 4)
                 .tag(index)
             }
         }
-        .frame(height: 92)
         .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 88)
+        .overlay(alignment: .bottom) {
+            heroPageIndicator
+                .padding(.bottom, 8)
+        }
         .onAppear {
             guard !heroItems.isEmpty else { return }
             heroPageIndex = 1
