@@ -101,7 +101,7 @@ struct DemoRootView: View {
                 .toolbarBackground(.visible, for: .navigationBar)
                 .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 1) {
                         if selectedTab == .home {
                             heroRail
                         }
@@ -109,7 +109,7 @@ struct DemoRootView: View {
                         bottomBar
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 12)
+                    .padding(.top, selectedTab == .home ? 1 : 12)
                 }
             }
 
