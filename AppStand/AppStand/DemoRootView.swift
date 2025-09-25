@@ -1,6 +1,6 @@
 import SwiftUI
 
-private struct HeroItem: Identifiable, Equatable {
+struct HeroItem: Identifiable, Equatable {
     let id = UUID()
     let title: String
     let systemIcon: String
@@ -8,7 +8,7 @@ private struct HeroItem: Identifiable, Equatable {
     let detail: String
 }
 
-private struct WrappedHeroItem: Identifiable {
+struct WrappedHeroItem: Identifiable, Equatable {
     let id = UUID()
     let originalIndex: Int
     let content: HeroItem
@@ -48,12 +48,12 @@ struct DemoRootView: View {
     let logoImageName: String?
 
     @State private var selectedTab: DemoTab = .home
-    @State private var selectedHeroIndex: Int = 0
-    @State private var heroPageIndex: Int = 1
+    @State var selectedHeroIndex: Int = 0
+    @State var heroPageIndex: Int = 1
     @State private var showSplash = true
     @State private var splashTaskScheduled = false
 
-    private let heroItems: [HeroItem] = [
+    private(set) var heroItems: [HeroItem] = [
         .init(
             title: "Arena",
             systemIcon: "trophy.fill",
@@ -76,7 +76,7 @@ struct DemoRootView: View {
             detail: "Sync upcoming events, seasonal quests, and collaborative raids with your crew.")
     ]
 
-    private var wrappedHeroItems: [WrappedHeroItem] {
+    var wrappedHeroItems: [WrappedHeroItem] {
         guard !heroItems.isEmpty else { return [] }
 
         let extended = [heroItems.last!] + heroItems + [heroItems.first!]
@@ -94,70 +94,100 @@ struct DemoRootView: View {
             return WrappedHeroItem(originalIndex: originalIndex, content: hero)
         }
     }
+    
+    static func buildWrappedHeroItems(from items: [HeroItem]) -> [WrappedHeroItem] {
+        guard !items.isEmpty else { return [] }
 
-    var body: some View {
-        ZStack {
-            NavigationStack {
-                ZStack(alignment: .top) {
-                    background
+        let extended = [items.last!] + items + [items.first!]
 
-                    VStack(spacing: 20) {
-                        content
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(stageBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                                    .strokeBorder(Color.white.opacity(0.12))
-                            )
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 16)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.top, 24)
-                    .padding(.horizontal, 12)
-                }
-                .navigationTitle("Vortex")
-                .toolbarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Text("AppStand")
-                            .font(.headline)
-                            .foregroundStyle(.white.opacity(0.9))
-                    }
-
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            print("Inbox tapped")
-                        } label: {
-                            Image(systemName: "tray.fill")
-                        }
-                    }
-
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button {
-                            print("Menu tapped")
-                        } label: {
-                            Image(systemName: "line.3.horizontal.decrease")
-                        }
-                    }
-                }
-                .toolbarBackground(.visible, for: .navigationBar)
-                .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 1) {
-                        if selectedTab == .home {
-                            heroRail
-                        }
-
-                        bottomBar
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, selectedTab == .home ? 1 : 12)
-                    .padding(.bottom, 16)
-                }
+        return extended.enumerated().map { index, hero in
+            let originalIndex: Int
+            if index == 0 {
+                originalIndex = items.count - 1
+            } else if index == extended.count - 1 {
+                originalIndex = 0
+            } else {
+                originalIndex = index - 1
             }
 
+            return WrappedHeroItem(originalIndex: originalIndex, content: hero)
+        }
+    }
+
+    static func normalizedIndices(for wrappedIndex: Int, realItemCount: Int) -> (pageIndex: Int, selectedHeroIndex: Int) {
+        precondition(realItemCount > 0, "realItemCount must be positive")
+        let lastWrappedIndex = realItemCount + 1
+        if wrappedIndex == 0 {
+            return (lastWrappedIndex - 1, realItemCount - 1)
+        } else if wrappedIndex == lastWrappedIndex {
+            return (1, 0)
+        } else {
+            return (wrappedIndex, wrappedIndex - 1)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack(alignment: .top) {
+                background
+
+                VStack(spacing: 20) {
+                    content
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(stageBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.12))
+                        )
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 16)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 24)
+                .padding(.horizontal, 12)
+            }
+            .navigationTitle("Vortex")
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Text("AppStand")
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        print("Inbox tapped")
+                    } label: {
+                        Image(systemName: "tray.fill")
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        print("Menu tapped")
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease")
+                    }
+                }
+            }
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 1) {
+                    if selectedTab == .home {
+                        heroRail
+                    }
+
+                    bottomBar
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, selectedTab == .home ? 1 : 12)
+                .padding(.bottom, 16)
+            }
+        }
+        .overlay {
             if showSplash {
                 splashScreen
                     .transition(.opacity)
@@ -197,6 +227,7 @@ struct DemoRootView: View {
             Text(heroItems[selectedHeroIndex].title)
                 .font(.largeTitle.bold())
                 .foregroundStyle(.white)
+                .accessibilityIdentifier("HomeScreenTitle")
 
             Text(heroItems[selectedHeroIndex].tagline)
                 .font(.headline.weight(.semibold))
@@ -244,7 +275,7 @@ struct DemoRootView: View {
         LinearGradient(colors: [Color.black.opacity(0.3), Color.black.opacity(0.45)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
-    private var heroRail: some View {
+    var heroRail: some View {
         TabView(selection: $heroPageIndex) {
             ForEach(Array(wrappedHeroItems.enumerated()), id: \.offset) { index, item in
                 HStack(spacing: 12) {
@@ -285,6 +316,7 @@ struct DemoRootView: View {
                 )
                 .padding(.horizontal, 4)
                 .tag(index)
+                .accessibilityIdentifier("HeroCard_\(item.content.title)")
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
@@ -293,6 +325,7 @@ struct DemoRootView: View {
             heroPageIndicator
                 .padding(.bottom, 8)
         }
+        .accessibilityIdentifier("HeroRail")
         .onAppear {
             guard !heroItems.isEmpty else { return }
             heroPageIndex = 1
@@ -300,32 +333,36 @@ struct DemoRootView: View {
         }
     }
 
-    private func normalizeHeroPageIndex(_ index: Int) {
+    func normalizeHeroPageIndex(_ index: Int, immediate: Bool = false) {
         guard !wrappedHeroItems.isEmpty else { return }
 
         let lastWrappedIndex = wrappedHeroItems.count - 1
 
         if index == 0 {
-            DispatchQueue.main.async {
+            let update = {
                 heroPageIndex = lastWrappedIndex - 1
                 selectedHeroIndex = wrappedHeroItems[heroPageIndex].originalIndex
             }
+            if immediate { update() } else { DispatchQueue.main.async(execute: update) }
         } else if index == lastWrappedIndex {
-            DispatchQueue.main.async {
+            let update = {
                 heroPageIndex = 1
                 selectedHeroIndex = wrappedHeroItems[heroPageIndex].originalIndex
             }
+            if immediate { update() } else { DispatchQueue.main.async(execute: update) }
         } else {
             selectedHeroIndex = wrappedHeroItems[index].originalIndex
         }
     }
 
-    private var heroPageIndicator: some View {
+    var heroPageIndicator: some View {
         HStack(spacing: 6) {
             ForEach(heroItems.indices, id: \.self) { index in
                 Circle()
                     .frame(width: 6, height: 6)
                     .foregroundStyle(index == selectedHeroIndex ? Color.white : Color.white.opacity(0.35))
+                    .accessibilityIdentifier("HeroIndicator_\(index)")
+                    .accessibilityValue(index == selectedHeroIndex ? Text("active") : Text("inactive"))
             }
         }
         .frame(maxWidth: .infinity)
@@ -386,6 +423,7 @@ struct DemoRootView: View {
                         .scaledToFit()
                         .frame(width: 140, height: 140)
                         .shadow(radius: 12)
+                        .accessibilityIdentifier("SplashLogo")
                 } else {
                     Image(systemName: "seal.fill")
                         .resizable()
@@ -393,6 +431,7 @@ struct DemoRootView: View {
                         .frame(width: 120, height: 120)
                         .foregroundStyle(.white.opacity(0.9))
                         .shadow(radius: 12)
+                        .accessibilityIdentifier("SplashLogo")
                 }
 
                 Text("Welcome")

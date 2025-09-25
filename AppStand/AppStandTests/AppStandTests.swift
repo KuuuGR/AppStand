@@ -10,27 +10,51 @@ import XCTest
 
 final class AppStandTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testWrappedHeroItemsAddsSentinelsAndMapsIndices() {
+        let source: [HeroItem] = [
+            .init(title: "One", systemIcon: "circle", tagline: "", detail: ""),
+            .init(title: "Two", systemIcon: "square", tagline: "", detail: ""),
+            .init(title: "Three", systemIcon: "triangle", tagline: "", detail: "")
+        ]
+
+        let wrapped = DemoRootView.buildWrappedHeroItems(from: source)
+
+        XCTAssertEqual(wrapped.count, source.count + 2, "Carousel should add sentinel items at both ends")
+        XCTAssertEqual(wrapped.first?.content, source.last, "First sentinel should duplicate last hero")
+        XCTAssertEqual(wrapped.last?.content, source.first, "Last sentinel should duplicate first hero")
+
+        let mappedIndices = wrapped.map(\.originalIndex)
+        XCTAssertEqual(mappedIndices, [2, 0, 1, 2, 0], "Original indices should reflect wrapping order")
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testNormalizeHeroPageIndexWrapsAndUpdatesSelection() {
+        let rootView = DemoRootView(logoImageName: "logo")
+        XCTAssertEqual(rootView.heroItems.count, 4)
+
+        // Use pure helper to guarantee deterministic results
+        let realCount = rootView.heroItems.count
+
+        var result = DemoRootView.normalizedIndices(for: rootView.wrappedHeroItems.count - 1, realItemCount: realCount)
+        XCTAssertEqual(result.pageIndex, 1)
+        XCTAssertEqual(result.selectedHeroIndex, 0)
+
+        result = DemoRootView.normalizedIndices(for: 0, realItemCount: realCount)
+        XCTAssertEqual(result.pageIndex, rootView.wrappedHeroItems.count - 2)
+        XCTAssertEqual(result.selectedHeroIndex, rootView.heroItems.count - 1)
+
+        result = DemoRootView.normalizedIndices(for: 2, realItemCount: realCount)
+        XCTAssertEqual(result.pageIndex, 2)
+        XCTAssertEqual(result.selectedHeroIndex, 1)
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
+    func testItemFormattedTimestampUsesFormatter() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+        let components = DateComponents(calendar: Calendar(identifier: .gregorian), year: 2025, month: 9, day: 25, hour: 13, minute: 37)
+        let date = components.date ?? Date()
+        let item = Item(timestamp: date)
 
+        XCTAssertEqual(item.formattedTimestamp(using: formatter), "2025-09-25 13:37")
+    }
 }

@@ -7,37 +7,55 @@
 
 import XCTest
 
+@MainActor
 final class AppStandUITests: XCTestCase {
 
+    private var app: XCUIApplication!
+
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        app = XCUIApplication()
+        app.launchArguments.append("-UITesting")
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        app = nil
     }
 
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+    func testSplashTransitionsToHome() throws {
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let splashLogo = app.images["SplashLogo"]
+        // Be tolerant to simulator slowness
+        XCTAssertTrue(splashLogo.waitForExistence(timeout: 5), "Splash logo should appear promptly")
+
+        let homeTitle = app.staticTexts["HomeScreenTitle"]
+        XCTAssertTrue(homeTitle.waitForExistence(timeout: 6), "Home content should appear after splash fades")
     }
 
-    @MainActor
+    func testHeroRailLoopsAndUpdatesContent() throws {
+        app.launch()
+
+        // `TabView` exposes as a scrollView in accessibility tree
+        let heroRail = app.scrollViews["HeroRail"]
+        XCTAssertTrue(heroRail.waitForExistence(timeout: 6), "Hero rail should be visible on home")
+
+        let arenaCard = heroRail.otherElements["HeroCard_Arena"]
+        XCTAssertTrue(arenaCard.exists, "Arena card should be present")
+
+        // Swipe left through all items to trigger wrap-around back to Arena
+        heroRail.swipeLeft()
+        heroRail.swipeLeft()
+        heroRail.swipeLeft()
+
+        let arenaDot = app.otherElements["HeroIndicator_0"]
+        XCTAssertTrue(arenaDot.exists)
+        XCTAssertEqual(arenaDot.value as? String, "active")
+    }
+
     func testLaunchPerformance() throws {
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // This measures how long it takes to launch your application.
-            measure(metrics: [XCTApplicationLaunchMetric()]) {
-                XCUIApplication().launch()
-            }
+        measure(metrics: [XCTApplicationLaunchMetric()]) {
+            XCUIApplication().launch()
         }
     }
 }
